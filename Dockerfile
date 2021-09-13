@@ -6,9 +6,9 @@ ENV PYTHONDONTWRITEBYTECODE=1
 RUN mkdir social_app/
 WORKDIR /social_app
 
-COPY requirements.txt /social_app/
+COPY poetry.lock pyproject.toml /social_app/
 
-RUN pip install -r requirements.txt
+RUN pip install --upgrade pip && pip install poetry && poetry config virtualenvs.create false && poetry install
 
 COPY . /social_app/
 

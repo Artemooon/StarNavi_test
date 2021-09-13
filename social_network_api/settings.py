@@ -32,7 +32,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'drf_yasg',
     'rest_framework',
-    'django_extensions',
     'social',
     'authentication',
 ]
@@ -68,7 +67,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'social_network_api.wsgi.application'
 
-
+AUTH_USER_MODEL = 'authentication.SocialProfile'
 
 DATABASES = {
     'default': {

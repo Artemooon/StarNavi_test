@@ -3,11 +3,10 @@ from datetime import datetime, timedelta
 import jwt
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
 from rest_framework import status
+from rest_framework.authentication import get_authorization_header
 
-from .authentication_rules import JWTAuthTokenRequired, move_auth_token_to_blacklist, check_auth_token_in_blacklist
-from social.models import SocialProfile
+from .authentication_rules import move_auth_token_to_blacklist, check_auth_token_in_blacklist
 
 User = get_user_model()
 
@@ -28,7 +27,6 @@ def encode_auth_token(user_id: int, exp: int, is_refresh_token: bool):
 
 
 def authenticate_user(username: str) -> dict:
-
     current_user = User.objects.filter(username=username).first()
 
     if current_user:
@@ -43,13 +41,12 @@ def authenticate_user(username: str) -> dict:
 
 
 def logout_user(request, refresh_token: str) -> dict:
-    auth_class = JWTAuthTokenRequired()
-
-    authentication_result = auth_class.authenticate(request=request)
-
-    if not authentication_result:
+    if not request.user.is_authenticated:
         return {'detail': 'Invalid access token', 'status': status.HTTP_400_BAD_REQUEST}
-    access_token = jwt.encode(authentication_result[1], settings.SECRET_KEY, algorithm='HS256')
+
+    auth = get_authorization_header(request).split()
+
+    access_token = auth[1].decode("utf-8")
 
     try:
         decoded_refresh_token = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=["HS256"])
@@ -71,13 +68,12 @@ def logout_user(request, refresh_token: str) -> dict:
 
 
 def refresh_access_token(request, refresh_token: str) -> dict:
-    auth_class = JWTAuthTokenRequired()
-
-    authentication_result = auth_class.authenticate(request=request)
-    if not authentication_result:
+    if not request.user.is_authenticated:
         return {'detail': 'Invalid access token', 'status': status.HTTP_400_BAD_REQUEST}
 
-    access_token = jwt.encode(authentication_result[1], settings.SECRET_KEY, algorithm='HS256')
+    auth = get_authorization_header(request).split()
+
+    access_token = auth[1].decode("utf-8")
 
     if not check_auth_token_in_blacklist(refresh_token):
         try:
@@ -88,20 +84,15 @@ def refresh_access_token(request, refresh_token: str) -> dict:
         decode_access_token = jwt.decode(access_token, settings.SECRET_KEY, algorithms=["HS256"])
         if decode_refresh_token['user_id'] == decode_access_token['user_id'] and \
                 decode_refresh_token['typ'] == 'refresh':
-            current_user_id = authentication_result[1]['user_id']
+            current_user_id = request.user.id
             result_access_token = encode_auth_token(current_user_id, settings.ACCESS_TOKEN_LIFETIME,
                                                     is_refresh_token=False)
             move_auth_token_to_blacklist(access_token, is_refresh_token=False)
 
             return {'access_token': result_access_token,
-                    'user': int(authentication_result[1]['user_id']),
+                    'user': int(current_user_id),
                     'status': 201}
 
         return {'message': 'Invalid refresh token', 'status': 400}
 
     return {'message': 'Provided refresh token not found', 'status': 401}
-
-
-def create_social_profile(user_id: int) -> None:
-    user = get_object_or_404(User, id=user_id)
-    SocialProfile.objects.create(user=user)

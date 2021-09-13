@@ -1,4 +1,3 @@
-from authentication.services.authentication_rules import JWTAuthTokenRequired
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import generics
@@ -6,7 +5,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 
-from .models import Post, SocialProfile
+from .models import Post
 from .serializers import PostSerializer, LikesAnalyticsSerializer, DislikesAnalyticsSerializer, \
     AnalyticsDatesSerializer, UserLastActivitySerializer
 from .services.dislikes import dislike_post, get_dislikes_aggregated_by_days
@@ -18,7 +17,6 @@ User = get_user_model()
 class GetPosts(generics.ListAPIView):
     # Get list of all posts (with pagination)
     queryset = Post.objects.all()
-    authentication_classes = [JWTAuthTokenRequired]
     permission_classes = [IsAuthenticated]
     serializer_class = PostSerializer
 
@@ -78,14 +76,10 @@ class LikePostView(generics.GenericAPIView):
     serializer_class = PostSerializer
 
     def post(self, request, post_id):
-        auth_class = JWTAuthTokenRequired()
-
-        authentication_result = auth_class.authenticate(request=request)
-
-        if not authentication_result:
+        if not request.user.is_authenticated:
             return {'detail': 'Invalid access token', 'status': status.HTTP_400_BAD_REQUEST}
 
-        current_user_id = authentication_result[1]['user_id']
+        current_user_id = request.user.id
 
         like_post_response = like_post(post_id, current_user_id)
 
@@ -98,14 +92,10 @@ class DislikePostView(generics.GenericAPIView):
     serializer_class = PostSerializer
 
     def post(self, request, post_id):
-        auth_class = JWTAuthTokenRequired()
-
-        authentication_result = auth_class.authenticate(request=request)
-
-        if not authentication_result:
+        if not request.user.is_authenticated:
             return {'detail': 'Invalid access token', 'status': status.HTTP_400_BAD_REQUEST}
 
-        current_user_id = authentication_result[1]['user_id']
+        current_user_id = request.user.id
 
         dislike_post_response = dislike_post(post_id, current_user_id)
 
@@ -119,6 +109,5 @@ class LastUserActivity(generics.RetrieveAPIView):
 
     def get_queryset(self):
         user_id = self.kwargs['user_id']
-        user = get_object_or_404(User, id=user_id)
-        social_profile = SocialProfile.objects.filter(user=user)
+        social_profile = get_object_or_404(User, id=user_id)
         return social_profile

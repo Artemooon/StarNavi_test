@@ -7,17 +7,6 @@ from rest_framework.authentication import get_authorization_header, exceptions, 
 User = get_user_model()
 
 
-# def get_user_access_token_from_headers(request):
-#     auth_token = None
-#
-#     auth_header = 'Authorization'
-#     if auth_header in request.META:
-#         auth_token = request.META[auth_header].split(' ')[1]
-#     if not auth_token:
-#         return Response({'detail': 'Token is missing'}, status=status.HTTP_200_OK)
-#
-#     return auth_token
-
 def check_auth_token_in_blacklist(auth_token: str) -> bool:
     # check whether auth token has been blacklisted
     token = cache.get(auth_token)
@@ -48,9 +37,9 @@ class JWTAuthTokenRequired(BaseAuthentication):
             msg = 'Invalid token header. Token string should not contain spaces.'
             raise exceptions.AuthenticationFailed(msg)
 
-        auth_token = auth[1]
+        auth_token = auth[1].decode("utf-8")
 
-        if check_auth_token_in_blacklist(auth_token.decode("utf-8")) is True:
+        if check_auth_token_in_blacklist(auth_token) is True:
             msg = 'Access Token is in a blacklist.'
             raise exceptions.AuthenticationFailed(msg)
 

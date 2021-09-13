@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from .models import Post, LikePost, DislikePost, SocialProfile
+from .models import Post, LikePost, DislikePost
 
 User = get_user_model()
 
@@ -54,9 +54,6 @@ class AnalyticsDatesSerializer(serializers.Serializer):
 
 
 class UserLastActivitySerializer(serializers.ModelSerializer):
-    last_login = serializers.PrimaryKeyRelatedField(source='user.last_login', read_only=True)
-    user_id = serializers.PrimaryKeyRelatedField(source='user.id', read_only=True)
-
     class Meta:
-        model = SocialProfile
+        model = User
         fields = ['user_id', 'last_activity', 'last_login']

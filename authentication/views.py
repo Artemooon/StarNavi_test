@@ -5,8 +5,8 @@ from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
 from .serializers import UserRegisterSerializer, UserLoginSerializer, RefreshAuthTokenSerializer
-from .services.base_auth import authenticate_user, logout_user, create_social_profile, refresh_access_token
 from .services.authentication_rules import get_auth_tokens_lifetime
+from .services.base_auth import authenticate_user, logout_user, refresh_access_token
 
 User = get_user_model()
 
@@ -20,7 +20,6 @@ class RegisterUser(generics.CreateAPIView):
 
         if serializer.is_valid():
             serializer.save()
-            create_social_profile(user_id=serializer.data['id'])
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -79,4 +78,3 @@ class AuthTokensLifetime(generics.GenericAPIView):
         tokens_lifetime = get_auth_tokens_lifetime()
 
         return Response(tokens_lifetime, status=status.HTTP_200_OK)
-
