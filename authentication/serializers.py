@@ -56,3 +56,9 @@ class RefreshAuthTokenSerializer(serializers.Serializer):
 
     class Meta:
         fields = ['refresh_token']
+
+
+class UserLastActivitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'last_activity', 'last_login']

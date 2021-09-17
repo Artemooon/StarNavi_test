@@ -51,9 +51,3 @@ class AnalyticsDatesSerializer(serializers.Serializer):
 
     class Meta:
         fields = ['date_from', 'date_to']
-
-
-class UserLastActivitySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['user_id', 'last_activity', 'last_login']

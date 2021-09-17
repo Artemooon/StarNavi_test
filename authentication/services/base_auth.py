@@ -22,7 +22,7 @@ def encode_auth_token(user_id: int, exp: int, is_refresh_token: bool):
 
         return jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
 
-    except Exception as e:
+    except ValueError as e:
         return {'message': str(e)}
 
 
@@ -32,6 +32,8 @@ def authenticate_user(username: str) -> dict:
     if current_user:
         access_token = encode_auth_token(current_user.id, settings.ACCESS_TOKEN_LIFETIME, is_refresh_token=False)
         refresh_token = encode_auth_token(current_user.id, settings.REFRESH_TOKEN_LIFETIME, is_refresh_token=True)
+
+        User.objects.filter(username=username).update(last_login=datetime.utcnow())
 
         return {'access_token': access_token,
                 'refresh_token': refresh_token,
