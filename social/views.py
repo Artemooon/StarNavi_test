@@ -1,19 +1,18 @@
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 
 from .models import Post
-from .serializers import PostSerializer, LikesAnalyticsSerializer, DislikesAnalyticsSerializer, \
-    AnalyticsDatesSerializer, UserLastActivitySerializer
+from .serializers import PostSerializer, LikesAnalyticsSerializer, DislikesAnalyticsSerializer, AnalyticsDatesSerializer
 from .services.dislikes import dislike_post, get_dislikes_aggregated_by_days
 from .services.likes import like_post, get_likes_aggregated_by_days
 
 User = get_user_model()
 
 
+# Fix date serialization, like dislike , create method, user app, check last_login, validate data in serializers
 class GetPosts(generics.ListAPIView):
     # Get list of all posts (with pagination)
     queryset = Post.objects.all()
@@ -25,23 +24,6 @@ class CreatePost(generics.CreateAPIView):
     # Creating new post
     permission_classes = [IsAuthenticated]
     serializer_class = PostSerializer
-
-    # Overriding create method, for custom functionality
-    def create(self, request, *args, **kwargs):
-        serializer = PostSerializer(data=request.data)
-
-        if serializer.is_valid():
-            data = request.data
-
-            author = User.objects.get(id=data.get('author'))
-            new_post = Post.objects.create(title=data['title'], body=data['body'],
-                                           author=author)
-
-            serializer = PostSerializer(new_post)
-
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LikesAnalytics(generics.ListAPIView):
@@ -101,13 +83,3 @@ class DislikePostView(generics.GenericAPIView):
 
         return Response(dislike_post_response, status=dislike_post_response['status'])
 
-
-class LastUserActivity(generics.RetrieveAPIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = UserLastActivitySerializer
-    lookup_field = "user_id"
-
-    def get_queryset(self):
-        user_id = self.kwargs['user_id']
-        social_profile = get_object_or_404(User, id=user_id)
-        return social_profile

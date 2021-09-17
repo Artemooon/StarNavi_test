@@ -4,7 +4,8 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
-from .serializers import UserRegisterSerializer, UserLoginSerializer, RefreshAuthTokenSerializer
+from .serializers import UserRegisterSerializer, UserLoginSerializer, RefreshAuthTokenSerializer, \
+    UserLastActivitySerializer
 from .services.authentication_rules import get_auth_tokens_lifetime
 from .services.base_auth import authenticate_user, logout_user, refresh_access_token
 
@@ -78,3 +79,10 @@ class AuthTokensLifetime(generics.GenericAPIView):
         tokens_lifetime = get_auth_tokens_lifetime()
 
         return Response(tokens_lifetime, status=status.HTTP_200_OK)
+
+
+class LastUserActivity(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserLastActivitySerializer
+    lookup_field = 'id'
+    queryset = User.objects.all()
